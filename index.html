@@ -46,14 +46,33 @@
     <script>
         async function generateEmail() {
             try {
-                let response = await fetch('https://api.mail.tm/accounts', {
+                // Step 1: Get available domain
+                let domainResponse = await fetch('https://api.mail.tm/domains');
+                let domainData = await domainResponse.json();
+                
+                if (!domainData || !domainData["hydra:member"].length) {
+                    document.getElementById("email-container").innerText = "No domains available.";
+                    return;
+                }
+                
+                let domain = domainData["hydra:member"][0].domain;
+                let randomUser = Math.random().toString(36).substring(2, 10);
+                let email = `${randomUser}@${domain}`;
+                
+                // Step 2: Create an email account
+                let accountResponse = await fetch('https://api.mail.tm/accounts', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ address: "", password: "password123" })
+                    body: JSON.stringify({ address: email, password: "password123" })
                 });
-                let data = await response.json();
                 
-                document.getElementById("email-container").innerText = data.address || "Failed to generate email.";
+                let accountData = await accountResponse.json();
+                
+                if (accountData.address) {
+                    document.getElementById("email-container").innerText = accountData.address;
+                } else {
+                    document.getElementById("email-container").innerText = "Failed to generate email.";
+                }
             } catch (error) {
                 document.getElementById("email-container").innerText = "Error generating email.";
             }
@@ -62,3 +81,4 @@
 
 </body>
 </html>
+
