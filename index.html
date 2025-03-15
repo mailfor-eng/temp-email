@@ -72,6 +72,7 @@
     <script>
         let emailUser = "";
         let emailDomain = "";
+        const API_BASE = "https://www.1secmail.org/api/v1/";
 
         function copyEmail() {
             var emailText = document.getElementById("email").textContent.trim();
@@ -88,7 +89,7 @@
 
         function generateEmail() {
             document.getElementById("email").textContent = "Generating...";
-            fetch("https://www.1secmail.com/api/v1/?action=genRandomMailbox")
+            fetch(`${API_BASE}?action=genRandomMailbox`)
                 .then(response => response.json())
                 .then(data => {
                     if (data && data.length > 0) {
@@ -109,7 +110,7 @@
         function fetchEmails() {
             if (!emailUser || !emailDomain) return;
 
-            fetch(`https://www.1secmail.com/api/v1/?action=getMessages&login=${emailUser}&domain=${emailDomain}`)
+            fetch(`${API_BASE}?action=getMessages&login=${emailUser}&domain=${emailDomain}`)
                 .then(response => response.json())
                 .then(messages => {
                     let inbox = document.getElementById("inbox");
@@ -130,7 +131,7 @@
         }
 
         function fetchEmailContent(id) {
-            fetch(`https://www.1secmail.com/api/v1/?action=readMessage&login=${emailUser}&domain=${emailDomain}&id=${id}`)
+            fetch(`${API_BASE}?action=readMessage&login=${emailUser}&domain=${emailDomain}&id=${id}`)
                 .then(response => response.json())
                 .then(email => {
                     alert(`From: ${email.from}\nSubject: ${email.subject}\nMessage:\n${email.textBody}`);
