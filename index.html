@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10-Minute Email</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        .email-box {
+            font-size: 20px;
+            font-weight: bold;
+            color: #007bff;
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 10px 0;
+        }
+        .btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Get Your Temporary Email</h1>
+    <p>Click the button below to generate a disposable 10-minute email.</p>
+    
+    <button class="btn" onclick="generateEmail()">Generate Email</button>
+    
+    <p id="email-container" class="email-box">Your email will appear here...</p>
+
+    <script>
+        async function generateEmail() {
+            try {
+                let response = await fetch('https://api.mail.tm/accounts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ address: "", password: "password123" })
+                });
+                let data = await response.json();
+                
+                document.getElementById("email-container").innerText = data.address || "Failed to generate email.";
+            } catch (error) {
+                document.getElementById("email-container").innerText = "Error generating email.";
+            }
+        }
+    </script>
+
+</body>
+</html>
