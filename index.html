@@ -53,7 +53,7 @@
         }
     </style>
 </head>
-<body>
+<body onload="generateEmail()">
     <div class="container">
         <h2>📧 Your Temporary Email</h2>
         <div class="email-box">
@@ -71,14 +71,17 @@
 
     <script>
         function copyEmail() {
-            var emailText = document.getElementById("email").innerText;
-            navigator.clipboard.writeText(emailText);
-            alert("Copied: " + emailText);
+            var emailText = document.getElementById("email").textContent.trim();
+            navigator.clipboard.writeText(emailText).then(() => {
+                alert("Copied: " + emailText);
+            }).catch(err => {
+                console.error("Failed to copy: ", err);
+            });
         }
         function generateEmail() {
             const randomString = Math.random().toString(36).substring(2, 10);
             const email = randomString + "@temp-mail.com";
-            document.getElementById("email").innerText = email;
+            document.getElementById("email").textContent = email;
         }
         function refreshInbox() {
             document.getElementById("inbox").innerHTML = "<h3>📥 Inbox</h3><p>Checking for messages...</p>";
@@ -86,9 +89,6 @@
                 document.getElementById("inbox").innerHTML = "<h3>📥 Inbox</h3><p>No new messages</p>";
             }, 2000);
         }
-        
-        // Generate an email when the page loads
-        window.onload = generateEmail;
     </script>
 </body>
 </html>
