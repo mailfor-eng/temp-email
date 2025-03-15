@@ -50,7 +50,101 @@
     <script>
         let userEmail = "";
         let userPassword = "password123";
-        let userToken 
+        let userToken = "";
+        let userId = "";
 
+        async function generateEmail() {
+            try {
+                document.getElementById("email-container").innerText = "Generating email...";
 
+                // Get available domain
+                let domainResponse = await fetch('https://api.mail.tm/domains');
+                let domainData = await domainResponse.json();
+                
+                if (!domainData || !domainData["hydra:member"].length) {
+                    document.getElementById("email-container").innerText = "No domains available.";
+                    return;
+                }
+                
+                let domain = domainData["hydra:member"][0].domain;
+                let randomUser = Math.random().toString(36).substring(2, 10);
+                userEmail = `${randomUser}@${domain}`;
+                
+                // Create an email account
+                let accountResponse = await fetch('https://api.mail.tm/accounts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ address: userEmail, password: userPassword })
+                });
 
+                let accountData = await accountResponse.json();
+
+                // If error occurs, show the error message
+                if (accountData["@type"] === "hydra:Error") {
+                    document.getElementById("email-container").innerText = "Error: " + accountData.description;
+                    return;
+                }
+
+                if (accountData.address) {
+                    document.getElementById("email-container").innerText = accountData.address;
+                    userId = accountData.id;
+                    
+                    // Log in to get token
+                    let loginResponse = await fetch('https://api.mail.tm/token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ address: userEmail, password: userPassword })
+                    });
+
+                    let loginData = await loginResponse.json();
+                    
+                    if (loginData.token) {
+                        userToken = loginData.token;
+                    } else {
+                        document.getElementById("email-container").innerText = "Failed to log in.";
+                    }
+                } else {
+                    document.getElementById("email-container").innerText = "Failed to generate email.";
+                }
+            } catch (error) {
+                document.getElementById("email-container").innerText = "Error generating email: " + error.message;
+            }
+        }
+
+        async function fetchMessages() {
+            if (!userToken) {
+                document.getElementById("message-container").innerText = "Please generate an email first!";
+                return;
+            }
+
+            try {
+                let messagesResponse = await fetch('https://api.mail.tm/messages', {
+                    headers: { 'Authorization': `Bearer ${userToken}` }
+                });
+
+                let messagesData = await messagesResponse.json();
+                
+                if (messagesData["hydra:member"].length > 0) {
+                    let latestMessage = messagesData["hydra:member"][0];
+                    let messageContent = `From: ${latestMessage.from.address} \nSubject: ${latestMessage.subject}`;
+
+                    // Fetch the full email body
+                    let emailResponse = await fetch(`https://api.mail.tm/messages/${latestMessage.id}`, {
+                        headers: { 'Authorization': `Bearer ${userToken}` }
+                    });
+
+                    let emailData = await emailResponse.json();
+                    messageContent += `\n\n${emailData.text}`;
+
+                    document.getElementById("message-container").innerText = messageContent;
+                } else {
+                    document.getElementById("message-container").innerText = "No new messages.";
+                }
+            } catch (error) {
+                document.getElementById("message-container").innerText = "Error fetching messages.";
+            }
+        }
+    </script>
+
+</body>
+</html>
