@@ -3,141 +3,172 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Temporary Email - Get Instant Email</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>10-Minute Email</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
             text-align: center;
+            background-color: #121212;
+            color: #ffffff;
             padding: 20px;
         }
         .container {
-            max-width: 500px;
+            max-width: 400px;
             margin: auto;
-            background: white;
+            background-color: #1e1e1e;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            box-shadow: 0px 4px 8px rgba(255, 255, 255, 0.1);
         }
-        .email-box {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #eef2f3;
+        h1 {
+            font-size: 22px;
+        }
+        .email-box, .message-box {
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffffff;
+            background-color: #333333;
             padding: 10px;
             border-radius: 5px;
+            display: block;
             margin: 10px 0;
-            font-size: 18px;
+            word-break: break-all;
         }
         .btn {
-            background-color: #007bff;
+            background-color: #ff6600;
             color: white;
             border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
+            padding: 12px;
             font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
             margin-top: 10px;
+            transition: 0.3s;
         }
         .btn:hover {
-            background-color: #0056b3;
+            background-color: #ff4500;
         }
-        .inbox {
-            text-align: left;
-            margin-top: 20px;
-            padding: 10px;
-            background: #fff;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        .loading {
+            color: #ffcc00;
         }
     </style>
 </head>
-<body onload="generateEmail()">
+<body>
+
     <div class="container">
-        <h2>📧 Your Temporary Email</h2>
-        <div class="email-box">
-            <span id="email">Generating...</span>
-            <button class="btn" onclick="copyEmail()"><i class="fa fa-copy"></i></button>
-        </div>
-        <button class="btn" onclick="generateEmail()">🔄 Generate New Email</button>
-        <button class="btn" onclick="fetchEmails()">📨 Refresh Inbox</button>
+        <h1>📧 Get Your Temporary Email</h1>
+        <p>Click below to generate a disposable email and check messages.</p>
         
-        <div class="inbox" id="inbox">
-            <h3>📥 Inbox</h3>
-            <p>No new messages</p>
-        </div>
+        <button class="btn" onclick="generateEmail()">Generate Email</button>
+        
+        <p id="email-container" class="email-box">Your email will appear here...</p>
+
+        <button class="btn" onclick="fetchMessages()">📩 Check Inbox</button>
+
+        <div id="message-container" class="message-box">No messages yet...</div>
     </div>
 
     <script>
-        let emailUser = "";
-        let emailDomain = "";
-        const API_BASE = "https://www.1secmail.org/api/v1/";
+        let userEmail = "";
+        let userPassword = "password123";
+        let userToken = "";
+        let userId = "";
 
-        function copyEmail() {
-            var emailText = document.getElementById("email").textContent.trim();
-            if (emailText && emailText !== "Generating...") {
-                navigator.clipboard.writeText(emailText).then(() => {
-                    alert("Copied: " + emailText);
-                }).catch(err => {
-                    console.error("Failed to copy: ", err);
+        async function generateEmail() {
+            try {
+                document.getElementById("email-container").innerHTML = "<span class='loading'>Generating email...</span>";
+
+                // Get available domain
+                let domainResponse = await fetch('https://api.mail.tm/domains');
+                let domainData = await domainResponse.json();
+                
+                if (!domainData || !domainData["hydra:member"].length) {
+                    document.getElementById("email-container").innerText = "No domains available.";
+                    return;
+                }
+                
+                let domain = domainData["hydra:member"][0].domain;
+                let randomUser = Math.random().toString(36).substring(2, 10);
+                userEmail = `${randomUser}@${domain}`;
+                
+                // Create an email account
+                let accountResponse = await fetch('https://api.mail.tm/accounts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ address: userEmail, password: userPassword })
                 });
-            } else {
-                alert("No email to copy!");
+
+                let accountData = await accountResponse.json();
+
+                if (accountData["@type"] === "hydra:Error") {
+                    document.getElementById("email-container").innerText = "Error: " + accountData.description;
+                    return;
+                }
+
+                if (accountData.address) {
+                    document.getElementById("email-container").innerText = accountData.address;
+                    userId = accountData.id;
+                    
+                    // Log in to get token
+                    let loginResponse = await fetch('https://api.mail.tm/token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ address: userEmail, password: userPassword })
+                    });
+
+                    let loginData = await loginResponse.json();
+                    
+                    if (loginData.token) {
+                        userToken = loginData.token;
+                    } else {
+                        document.getElementById("email-container").innerText = "Failed to log in.";
+                    }
+                } else {
+                    document.getElementById("email-container").innerText = "Failed to generate email.";
+                }
+            } catch (error) {
+                document.getElementById("email-container").innerText = "Error generating email: " + error.message;
             }
         }
 
-        function generateEmail() {
-            document.getElementById("email").textContent = "Generating...";
-            fetch(`${API_BASE}?action=genRandomMailbox`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data && data.length > 0) {
-                        let email = data[0];
-                        document.getElementById("email").textContent = email;
-                        [emailUser, emailDomain] = email.split("@");
-                        fetchEmails();
-                    } else {
-                        document.getElementById("email").textContent = "Failed to generate email";
-                    }
-                })
-                .catch(error => {
-                    console.error("Error generating email:", error);
-                    document.getElementById("email").textContent = "Error generating email";
+        async function fetchMessages() {
+            if (!userToken) {
+                document.getElementById("message-container").innerText = "Please generate an email first!";
+                return;
+            }
+
+            try {
+                let messagesResponse = await fetch('https://api.mail.tm/messages', {
+                    headers: { 'Authorization': `Bearer ${userToken}` }
                 });
+
+                let messagesData = await messagesResponse.json();
+                
+                if (messagesData["hydra:member"].length > 0) {
+                    let latestMessage = messagesData["hydra:member"][0];
+                    let messageContent = `<b>From:</b> ${latestMessage.from.address} <br><b>Subject:</b> ${latestMessage.subject}`;
+
+                    // Fetch the full email body
+                    let emailResponse = await fetch(`https://api.mail.tm/messages/${latestMessage.id}`, {
+                        headers: { 'Authorization': `Bearer ${userToken}` }
+                    });
+
+                    let emailData = await emailResponse.json();
+                    messageContent += `<br><br>${emailData.text}`;
+
+                    document.getElementById("message-container").innerHTML = messageContent;
+                } else {
+                    document.getElementById("message-container").innerText = "No new messages.";
+                }
+            } catch (error) {
+                document.getElementById("message-container").innerText = "Error fetching messages.";
+            }
         }
 
-        function fetchEmails() {
-            if (!emailUser || !emailDomain) return;
-
-            fetch(`${API_BASE}?action=getMessages&login=${emailUser}&domain=${emailDomain}`)
-                .then(response => response.json())
-                .then(messages => {
-                    let inbox = document.getElementById("inbox");
-                    inbox.innerHTML = "<h3>📥 Inbox</h3>";
-                    
-                    if (messages.length === 0) {
-                        inbox.innerHTML += "<p>No new messages</p>";
-                    } else {
-                        messages.forEach(msg => {
-                            inbox.innerHTML += `<p><strong>From:</strong> ${msg.from}</p>
-                                                 <p><strong>Subject:</strong> ${msg.subject}</p>
-                                                 <button class='btn' onclick='fetchEmailContent(${msg.id})'>📩 View</button>
-                                                 <hr>`;
-                        });
-                    }
-                })
-                .catch(error => console.error("Error fetching emails:", error));
-        }
-
-        function fetchEmailContent(id) {
-            fetch(`${API_BASE}?action=readMessage&login=${emailUser}&domain=${emailDomain}&id=${id}`)
-                .then(response => response.json())
-                .then(email => {
-                    alert(`From: ${email.from}\nSubject: ${email.subject}\nMessage:\n${email.textBody}`);
-                })
-                .catch(error => console.error("Error fetching email content:", error));
-        }
+        // Auto-refresh inbox every 10 seconds
+        setInterval(fetchMessages, 10000);
     </script>
+
 </body>
 </html>
