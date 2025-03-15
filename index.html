@@ -25,7 +25,7 @@
         }
         .email-box {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
             font-size: 16px;
             font-weight: bold;
@@ -37,11 +37,18 @@
             word-break: break-all;
         }
         .copy-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
+            background-color: #4CAF50;
             color: white;
-            font-size: 16px;
+            border: none;
+            padding: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 5px;
+            transition: 0.3s;
+        }
+        .copy-btn:hover {
+            background-color: #45a049;
         }
         .btn {
             background-color: #ff6600;
@@ -76,7 +83,7 @@
         
         <div class="email-box">
             <span id="email">Generating...</span>
-            <button class="copy-btn" onclick="copyEmail()">📋</button>
+            <button class="copy-btn" onclick="copyEmail()">Copy Email</button>
         </div>
 
         <button class="btn" onclick="generateEmail()">🔄 Generate New Email</button>
@@ -138,9 +145,13 @@
 
         function copyEmail() {
             let emailText = document.getElementById("email").innerText;
-            navigator.clipboard.writeText(emailText).then(() => {
-                alert("Copied: " + emailText);
-            });
+            const textArea = document.createElement("textarea");
+            textArea.value = emailText;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textArea);
+            alert("Copied: " + emailText);
         }
 
         async function fetchMessages() {
