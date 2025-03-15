@@ -57,7 +57,7 @@
     <div class="container">
         <h2>📧 Your Temporary Email</h2>
         <div class="email-box">
-            <span id="email"></span>
+            <span id="email">Generating...</span>
             <button class="btn" onclick="copyEmail()"><i class="fa fa-copy"></i></button>
         </div>
         <button class="btn" onclick="generateEmail()">🔄 Generate New Email</button>
@@ -70,27 +70,40 @@
     </div>
 
     <script>
-        let emailUser, emailDomain;
+        let emailUser = "";
+        let emailDomain = "";
 
         function copyEmail() {
             var emailText = document.getElementById("email").textContent.trim();
-            navigator.clipboard.writeText(emailText).then(() => {
-                alert("Copied: " + emailText);
-            }).catch(err => {
-                console.error("Failed to copy: ", err);
-            });
+            if (emailText && emailText !== "Generating...") {
+                navigator.clipboard.writeText(emailText).then(() => {
+                    alert("Copied: " + emailText);
+                }).catch(err => {
+                    console.error("Failed to copy: ", err);
+                });
+            } else {
+                alert("No email to copy!");
+            }
         }
 
         function generateEmail() {
+            document.getElementById("email").textContent = "Generating...";
             fetch("https://www.1secmail.com/api/v1/?action=genRandomMailbox")
                 .then(response => response.json())
                 .then(data => {
-                    let email = data[0];
-                    document.getElementById("email").textContent = email;
-                    [emailUser, emailDomain] = email.split("@");
-                    fetchEmails();
+                    if (data && data.length > 0) {
+                        let email = data[0];
+                        document.getElementById("email").textContent = email;
+                        [emailUser, emailDomain] = email.split("@");
+                        fetchEmails();
+                    } else {
+                        document.getElementById("email").textContent = "Failed to generate email";
+                    }
                 })
-                .catch(error => console.error("Error generating email:", error));
+                .catch(error => {
+                    console.error("Error generating email:", error);
+                    document.getElementById("email").textContent = "Error generating email";
+                });
         }
 
         function fetchEmails() {
@@ -127,4 +140,3 @@
     </script>
 </body>
 </html>
-
