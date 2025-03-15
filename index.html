@@ -3,42 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>10-Minute Email</title>
+    <title>Temporary Email - Get Instant Email</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
             text-align: center;
-            background-color: #121212;
-            color: #ffffff;
             padding: 20px;
         }
         .container {
-            max-width: 400px;
+            max-width: 500px;
             margin: auto;
-            background-color: #1e1e1e;
+            background: white;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0px 4px 8px rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
-        h1 {
-            font-size: 22px;
-        }
-        .email-box, .message-box {
-            font-size: 16px;
-            font-weight: bold;
-            color: #ffffff;
-            background-color: #333333;
+        .email-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #eef2f3;
             padding: 10px;
             border-radius: 5px;
-            display: block;
             margin: 10px 0;
-            word-break: break-all;
+            font-size: 18px;
         }
         .btn {
-            background-color: #ff6600;
+            background-color: #007bff;
             color: white;
             border: none;
-            padding: 12px;
-            font-size: 16px;
-            cursor: pointer;
+            padding: 10px 15px;
             border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .inbox {
+            text-align: left;
+            margin-top: 20px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📧 Your Temporary Email</h2>
+        <div class="email-box">
+            <span id="email"></span>
+            <button class="btn" onclick="copyEmail()"><i class="fa fa-copy"></i></button>
+        </div>
+        <button class="btn" onclick="generateEmail()">🔄 Generate New Email</button>
+        <button class="btn" onclick="refreshInbox()">📨 Refresh Inbox</button>
+        
+        <div class="inbox" id="inbox">
+            <h3>📥 Inbox</h3>
+            <p>No new messages</p>
+        </div>
+    </div>
+
+    <script>
+        function copyEmail() {
+            var emailText = document.getElementById("email").innerText;
+            navigator.clipboard.writeText(emailText);
+            alert("Copied: " + emailText);
+        }
+        function generateEmail() {
+            const randomString = Math.random().toString(36).substring(2, 10);
+            const email = randomString + "@temp-mail.com";
+            document.getElementById("email").innerText = email;
+        }
+        function refreshInbox() {
+            document.getElementById("inbox").innerHTML = "<h3>📥 Inbox</h3><p>Checking for messages...</p>";
+            setTimeout(() => {
+                document.getElementById("inbox").innerHTML = "<h3>📥 Inbox</h3><p>No new messages</p>";
+            }, 2000);
+        }
+        
+        // Generate an email when the page loads
+        window.onload = generateEmail;
+    </script>
+</body>
+</html>
