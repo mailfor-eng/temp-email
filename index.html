@@ -24,17 +24,24 @@
             font-size: 22px;
         }
         .email-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             font-size: 16px;
             font-weight: bold;
             color: #ffffff;
             background-color: #333333;
             padding: 10px;
             border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             margin: 10px 0;
             word-break: break-all;
+        }
+        .copy-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: white;
+            font-size: 16px;
         }
         .btn {
             background-color: #ff6600;
@@ -51,29 +58,31 @@
         .btn:hover {
             background-color: #ff4500;
         }
-        .loading {
-            color: #ffcc00;
-        }
-        .copy-icon {
-            cursor: pointer;
-            margin-left: 10px;
+        .message-box {
+            font-size: 16px;
+            background-color: #333333;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            word-break: break-word;
         }
     </style>
 </head>
 <body onload="generateEmail()">
+
     <div class="container">
         <h1>📧 Get Your Temporary Email</h1>
         <p>Your disposable email is ready to use!</p>
         
         <div class="email-box">
-            <span id="email-container">Generating email...</span>
-            <span class="copy-icon" onclick="copyEmail()">📋</span>
+            <span id="email">Generating...</span>
+            <button class="copy-btn" onclick="copyEmail()">📋</button>
         </div>
-        
+
         <button class="btn" onclick="generateEmail()">🔄 Generate New Email</button>
         <button class="btn" onclick="fetchMessages()">📩 Check Inbox</button>
-        
-        <div id="message-container" class="email-box">No messages yet...</div>
+
+        <div id="message-container" class="message-box">No messages yet...</div>
     </div>
 
     <script>
@@ -84,13 +93,13 @@
 
         async function generateEmail() {
             try {
-                document.getElementById("email-container").innerHTML = "<span class='loading'>Generating email...</span>";
+                document.getElementById("email").innerText = "Generating...";
 
                 let domainResponse = await fetch('https://api.mail.tm/domains');
                 let domainData = await domainResponse.json();
                 
                 if (!domainData || !domainData["hydra:member"].length) {
-                    document.getElementById("email-container").innerText = "No domains available.";
+                    document.getElementById("email").innerText = "No domains available.";
                     return;
                 }
                 
@@ -103,11 +112,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ address: userEmail, password: userPassword })
                 });
-
                 let accountData = await accountResponse.json();
 
                 if (accountData.address) {
-                    document.getElementById("email-container").innerText = accountData.address;
+                    document.getElementById("email").innerText = accountData.address;
                     userId = accountData.id;
                     
                     let loginResponse = await fetch('https://api.mail.tm/token', {
@@ -115,28 +123,23 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ address: userEmail, password: userPassword })
                     });
-
                     let loginData = await loginResponse.json();
                     
                     if (loginData.token) {
                         userToken = loginData.token;
-                    } else {
-                        document.getElementById("email-container").innerText = "Failed to log in.";
                     }
                 } else {
-                    document.getElementById("email-container").innerText = "Failed to generate email.";
+                    document.getElementById("email").innerText = "Failed to generate email.";
                 }
             } catch (error) {
-                document.getElementById("email-container").innerText = "Error generating email: " + error.message;
+                document.getElementById("email").innerText = "Error generating email.";
             }
         }
 
         function copyEmail() {
-            let emailText = document.getElementById("email-container").innerText;
+            let emailText = document.getElementById("email").innerText;
             navigator.clipboard.writeText(emailText).then(() => {
                 alert("Copied: " + emailText);
-            }).catch(err => {
-                alert("Failed to copy: " + err);
             });
         }
 
@@ -145,12 +148,10 @@
                 document.getElementById("message-container").innerText = "Please generate an email first!";
                 return;
             }
-
             try {
                 let messagesResponse = await fetch('https://api.mail.tm/messages', {
                     headers: { 'Authorization': `Bearer ${userToken}` }
                 });
-
                 let messagesData = await messagesResponse.json();
                 
                 if (messagesData["hydra:member"].length > 0) {
@@ -160,7 +161,6 @@
                     let emailResponse = await fetch(`https://api.mail.tm/messages/${latestMessage.id}`, {
                         headers: { 'Authorization': `Bearer ${userToken}` }
                     });
-
                     let emailData = await emailResponse.json();
                     messageContent += `<br><br>${emailData.text}`;
 
@@ -173,5 +173,6 @@
             }
         }
     </script>
+
 </body>
 </html>
