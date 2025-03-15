@@ -61,7 +61,7 @@
             <button class="btn" onclick="copyEmail()"><i class="fa fa-copy"></i></button>
         </div>
         <button class="btn" onclick="generateEmail()">🔄 Generate New Email</button>
-        <button class="btn" onclick="refreshInbox()">📨 Refresh Inbox</button>
+        <button class="btn" onclick="fetchEmails()">📨 Refresh Inbox</button>
         
         <div class="inbox" id="inbox">
             <h3>📥 Inbox</h3>
@@ -70,6 +70,8 @@
     </div>
 
     <script>
+        let emailUser, emailDomain;
+
         function copyEmail() {
             var emailText = document.getElementById("email").textContent.trim();
             navigator.clipboard.writeText(emailText).then(() => {
@@ -78,17 +80,51 @@
                 console.error("Failed to copy: ", err);
             });
         }
+
         function generateEmail() {
-            const randomString = Math.random().toString(36).substring(2, 10);
-            const email = randomString + "@temp-mail.com";
-            document.getElementById("email").textContent = email;
+            fetch("https://www.1secmail.com/api/v1/?action=genRandomMailbox")
+                .then(response => response.json())
+                .then(data => {
+                    let email = data[0];
+                    document.getElementById("email").textContent = email;
+                    [emailUser, emailDomain] = email.split("@");
+                    fetchEmails();
+                })
+                .catch(error => console.error("Error generating email:", error));
         }
-        function refreshInbox() {
-            document.getElementById("inbox").innerHTML = "<h3>📥 Inbox</h3><p>Checking for messages...</p>";
-            setTimeout(() => {
-                document.getElementById("inbox").innerHTML = "<h3>📥 Inbox</h3><p>No new messages</p>";
-            }, 2000);
+
+        function fetchEmails() {
+            if (!emailUser || !emailDomain) return;
+
+            fetch(`https://www.1secmail.com/api/v1/?action=getMessages&login=${emailUser}&domain=${emailDomain}`)
+                .then(response => response.json())
+                .then(messages => {
+                    let inbox = document.getElementById("inbox");
+                    inbox.innerHTML = "<h3>📥 Inbox</h3>";
+                    
+                    if (messages.length === 0) {
+                        inbox.innerHTML += "<p>No new messages</p>";
+                    } else {
+                        messages.forEach(msg => {
+                            inbox.innerHTML += `<p><strong>From:</strong> ${msg.from}</p>
+                                                 <p><strong>Subject:</strong> ${msg.subject}</p>
+                                                 <button class='btn' onclick='fetchEmailContent(${msg.id})'>📩 View</button>
+                                                 <hr>`;
+                        });
+                    }
+                })
+                .catch(error => console.error("Error fetching emails:", error));
+        }
+
+        function fetchEmailContent(id) {
+            fetch(`https://www.1secmail.com/api/v1/?action=readMessage&login=${emailUser}&domain=${emailDomain}&id=${id}`)
+                .then(response => response.json())
+                .then(email => {
+                    alert(`From: ${email.from}\nSubject: ${email.subject}\nMessage:\n${email.textBody}`);
+                })
+                .catch(error => console.error("Error fetching email content:", error));
         }
     </script>
 </body>
 </html>
+
